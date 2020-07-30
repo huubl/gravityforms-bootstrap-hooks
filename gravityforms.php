@@ -46,15 +46,30 @@ if (class_exists('GFCommon')) {
     });
     add_filter('gform_init_scripts_footer', '__return_true');
 
-    /** Add .form-group to .gfield. */
+    /** change ul to div */
+    add_filter( 'gform_get_form_filter', function($form_string, $form) {
+        $form_string = str_replace( '<ul', '<div', $form_string);
+        $form_string = str_replace( '</ul>', '</div>', $form_string);
+        return $form_string;
+
+    }, 10, 2 );
+
+    /** change li to div */
+    add_filter( 'gform_field_container', function ( $field_container, $field, $form, $css_class, $style, $field_content ) {
+        $field_container = str_replace('<li','<div',$field_container);
+        $field_container = str_replace('</li>','</div>',$field_container);
+        return $field_container;
+    }, 10, 6 );
+
+    /** Add .mb-3 to .gfield. */
     add_filter('gform_field_css_class', function ($classes, $field, $form) {
-        $classes .= ' form-group';
+        $classes .= ' mb-3';
         return $classes;
     }, 10, 3);
 
     /** Modify the fields classes to Bootstrap classes. */
     add_filter('gform_field_content', function ($content, $field, $value, $lead_id, $form_id) {
-        // Exclude field types for later customisation
+        // Exclude field types for later formisation
         $exclude_formcontrol = array(
             'hidden',
             'email',
@@ -80,6 +95,12 @@ if (class_exists('GFCommon')) {
             $content = str_replace('class=\'large', 'class=\'form-control form-control-lg', $content);
         }
 
+        // Field labels
+        $content = str_replace( '<label class=\'gfield_label\'', '<label class=\'form-label\'', $content );
+
+        // Required fields
+        $content = str_replace('<span class=\'gfield_required\'>*</span>', '<span class=\'text-danger\'>*</span>', $content);
+
         // Descriptions
         $content = str_replace('gfield_description', 'gfield_description small', $content);
 
@@ -88,16 +109,16 @@ if (class_exists('GFCommon')) {
         $content = str_replace('ginput_amount', 'form-control', $content);
 
         // Select fields.
-        $content = str_replace('gfield_select', 'custom-select ', $content);
+        $content = str_replace('gfield_select', 'form-select ', $content);
         if ('select' === $field['type'] || 'post_category' === $field['type']) {
-            $content = str_replace('class=\'small', 'class=\'custom-select-sm', $content);
+            $content = str_replace('class=\'small', 'class=\'form-select-sm', $content);
             $content = str_replace('class=\'medium', 'class=\'', $content);
-            $content = str_replace('class=\'large', 'class=\'custom-select-lg', $content);
+            $content = str_replace('class=\'large', 'class=\'form-select-lg', $content);
         }
 
         // Select fields with multiselect option.
         if ('multiselect' === $field['type']) {
-            $content = str_replace('custom-select', 'form-control', $content);
+            $content = str_replace('form-select', 'form-control', $content);
         }
 
         // Textarea fields.
@@ -109,16 +130,16 @@ if (class_exists('GFCommon')) {
 
         // Checkbox fields.
         if ('checkbox' === $field['type'] || $field['inputType'] === 'checkbox') {
-            $content = str_replace('li class=\'', 'li class=\'custom-control custom-checkbox ', $content);
-            $content = str_replace('<input', '<input class=\'custom-control-input\'', $content);
-            $content = str_replace('<label for', '<label class=\'custom-control-label\' for', $content);
+            $content = str_replace( 'li class=\'', 'li class=\'form-control form-checkbox ', $content );
+            $content = str_replace( '<input ', '<input class=\'form-control-input\' ', $content );
+//            $content = str_replace( '<label for', '<label class=\'form-control-label\' for', $content );
         }
 
         // Radio fields.
         if ('radio' === $field['type'] || $field['inputType'] === 'radio') {
-            $content = str_replace('li class=\'', 'li class=\'custom-control custom-radio ', $content);
-            $content = str_replace('<input name=', '<input class=\'custom-control-input\' name=', $content);
-            $content = str_replace('<label for', '<label class=\'custom-control-label\' for', $content);
+            $content = str_replace('li class=\'', 'li class=\'form-control form-radio ', $content);
+            $content = str_replace('<input name=', '<input class=\'form-control-input\' name=', $content);
+//            $content = str_replace('<label for', '<label class=\'form-control-label\' for', $content);
             $content = str_replace('<input id', '<input class=\'form-control form-control-sm\' id', $content); // 'Other' option field
         }
 
@@ -129,7 +150,7 @@ if (class_exists('GFCommon')) {
 
         // Date & Time fields.
         if ('date' === $field['type'] || 'time' === $field['type']) {
-            $content = str_replace('<select', '<select class=\'custom-select\'', $content);
+            $content = str_replace('<select', '<select class=\'form-select\'', $content);
             $content = str_replace('type=\'number\'', 'type=\'number\' class=\'form-control\'', $content);
             $content = str_replace('class=\'datepicker medium', 'class=\'form-control datepicker', $content);
         }
@@ -157,13 +178,13 @@ if (class_exists('GFCommon')) {
             // Name & Address fields.
             if ('name' === $field['type'] || 'address' === $field['type']) {
                 $content = str_replace('<input ', '<input class=\'form-control\' ', $content);
-                $content = str_replace('<select ', '<select class=\'custom-select\' ', $content);
+                $content = str_replace('<select ', '<select class=\'form-select\' ', $content);
             }
         }
 
         // Consent fields.
         if ('consent' === $field['type']) {
-            $content = str_replace('ginput_container_consent', 'ginput_container_consent custom-control custom-checkbox', $content);
+            $content = str_replace('ginput_container_consent', 'ginput_container_consent form-checkbox', $content);
             $content = str_replace('gfield_consent_label', 'gfield_consent_label custom-control-label', $content);
             $content = str_replace('type=\'checkbox\'', 'type=\'checkbox\' class=\'custom-control-input\' ', $content);
         }
@@ -177,9 +198,9 @@ if (class_exists('GFCommon')) {
             // Single file uploads
             if (!is_admin() && false === $field['multipleFiles']) {
                 // Check if the field is required and create red asterix.
-                $required = ($field['isRequired']) ? '<span class=\'gfield_required\'>*</span>' : '';
-                // Add a div spanning the label and input with .custom-file
-                $content = str_replace('<label class=\'gfield_label\'', '<div class=\'ginput_container\'><div class=\'custom-file\'><label class=\'custom-file-label\'', $content);
+                $required = ($field['isRequired']) ? '<span class=\'text-danger\'>*</span>' : '';
+                // Add a div spanning the label and input with .form-file
+                $content = str_replace('<label class=\'gfield_label\'', '<div class=\'ginput_container\'><div class=\'form-file\'><label class=\'form-file-label\'', $content);
                 // If Preview is enabled add an image without src.
                 if (strpos($field['cssClass'], 'preview') !== false) {
                     $content .= '</div><img id=\'output_' . $form_id . '_' . $field['id'] . '\'></div>';
@@ -188,8 +209,8 @@ if (class_exists('GFCommon')) {
                 }
                 // Add a new 'fake' label
                 $content = str_replace('<div class=\'ginput_container\'>', '<label class=\'gfield_label\'>' . $field['label'] . $required . '</label><div class=\'ginput_container\'>', $content);
-                // Add .custom-file-input class to the file-input
-                $content = str_replace('type=\'file\' class=\'medium\'', 'type=\'file\' class=\'custom-file-input\'', $content);
+                // Add .form-file-input class to the file-input
+                $content = str_replace('type=\'file\' class=\'medium\'', 'type=\'file\' class=\'form-file-input\'', $content);
                 // Add javascript to show filename after upload.
                 $content .= '<script>
                     document.getElementById(\'input_' . $form_id . '_' . $field['id'] . '\').addEventListener(\'change\', function (e) {
@@ -249,7 +270,7 @@ if (class_exists('GFCommon')) {
 
     /** Change classes on progressbars */
     add_filter('gform_progress_bar', function ($progress_bar, $form, $confirmation_message) {
-        $progress_bar = str_replace('progress_wrapper', 'progress_wrapper form-group', $progress_bar);
+        $progress_bar = str_replace('progress_wrapper', 'progress_wrapper mb-3', $progress_bar);
         $progress_bar = str_replace('gf_progressbar', 'gf_progressbar progress', $progress_bar);
         $progress_bar = str_replace('progress_percentage', 'progress_percentage progress-bar progress-bar-striped progress-bar-animated', $progress_bar);
         $progress_bar = str_replace('percentbar_blue', 'percentbar_blue bg-primary', $progress_bar);
